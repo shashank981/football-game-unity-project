@@ -1,0 +1,94 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+public class movement : MonoBehaviour
+{
+    CharacterController controller;
+
+    Vector3 velocity;
+    public float speed = 12f;
+    public float gravity = -19.6f;
+    public float jumpHeight = 3f;
+    public bool isSprinting = false;
+    public float movementmultiplier;
+    public Transform groundCheck;
+    public float groundDistance = 0.4f;
+    public LayerMask groundMask;
+    public Image staminaBar;
+    public float stamina, maxStamina;
+    public float Attackcost;
+    public float Gainrate;
+    public float speedDrain;
+    public float maxspeed;
+    public float minspeed;
+    public Image healthbar;
+    public float health;
+    public float maxhealth;
+
+    bool isGrounded;
+
+    void Start()
+    {
+        controller = GetComponent<CharacterController>();
+    }
+
+    void Update()
+    {
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+
+        if (isGrounded && velocity.y < 0)
+            velocity.y = -2f;
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+        float currentspeed = speed;
+        Vector3 move = (transform.right * x + transform.forward * z).normalized;
+        isSprinting = Input.GetKey(KeyCode.LeftShift) && stamina > 0 && move.magnitude > 0.1f;
+
+
+        if (isSprinting)
+        {
+            currentspeed *= movementmultiplier;
+            stamina -= Attackcost * Time.deltaTime;
+        }
+        Debug.Log(currentspeed);
+        if (stamina == 0)
+        {
+            currentspeed -= speedDrain;
+            if (currentspeed < minspeed) currentspeed = minspeed;
+        }
+        controller.Move(move * currentspeed * Time.deltaTime);
+        if (move.magnitude == 0)
+        {
+            Debug.Log("Attack");
+            stamina += Gainrate * Time.deltaTime;
+            if (stamina > maxStamina) stamina = maxStamina;
+            staminaBar.fillAmount = stamina / maxStamina;
+
+        }
+        isSprinting = Input.GetKey(KeyCode.LeftShift) && stamina > 0 && move.magnitude > 0.1f;
+
+
+        if (isSprinting)
+        {
+            currentspeed *= movementmultiplier;
+            stamina -= Attackcost * Time.deltaTime;
+        }
+        Debug.Log(currentspeed);
+        if (move.magnitude > 0)
+        {
+            Debug.Log("Attack");
+            stamina -= Attackcost * Time.deltaTime;
+            if (stamina < 0) stamina = 0;
+            staminaBar.fillAmount = stamina / maxStamina;
+        }
+
+
+
+        if (Input.GetButtonDown("Jump") && isGrounded)
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
+    }
+}
